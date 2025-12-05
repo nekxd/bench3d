@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мощный 3D бенчмарк</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e6e6e6;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #00dbde, #fc00ff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.8;
+            margin-bottom: 20px;
+        }
+        
+        .stats-container {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-box {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 20px;
+            border-radius: 10px;
+            min-width: 200px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .stat-box:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+        }
+        
+        .stat-value {
+            font-size: 3rem;
+            font-weight: bold;
+            margin: 10px 0;
+            color: #4cc9f0;
+            text-shadow: 0 0 10px rgba(76, 201, 240, 0.5);
+        }
+        
+        .stat-label {
+            font-size: 1rem;
+            opacity: 0.8;
+        }
+        
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            height: 600px;
+            margin: 0 auto 30px;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        #renderCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s;
+            min-width: 180px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        
+        #startBtn {
+            background: linear-gradient(90deg, #00b09b, #96c93d);
+            color: white;
+        }
+        
+        #startBtn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(0, 176, 155, 0.7);
+        }
+        
+        #stopBtn {
+            background: linear-gradient(90deg, #ff416c, #ff4b2b);
+            color: white;
+        }
+        
+        #stopBtn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255, 65, 108, 0.7);
+        }
+        
+        .timer-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .timer {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #f72585;
+            text-shadow: 0 0 10px rgba(247, 37, 133, 0.7);
+        }
+        
+        .results {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 30px;
+            border-radius: 15px;
+            margin-top: 30px;
+            display: none;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .results h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #4cc9f0;
+        }
+        
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .result-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 10px;
+        }
+        
+        .result-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #72efdd;
+            margin: 10px 0;
+        }
+        
+        .fps-chart {
+            height: 200px;
+            margin-top: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .fps-bar {
+            position: absolute;
+            bottom: 0;
+            width: 4px;
+            background: linear-gradient(to top, #00dbde, #fc00ff);
+            border-radius: 2px 2px 0 0;
+        }
+        
+        .warning {
+            text-align: center;
+            color: #ff9e00;
+            font-style: italic;
+            margin-top: 10px;
+            opacity: 0.8;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            opacity: 0.7;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .canvas-container {
+                height: 400px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .stat-value {
+                font-size: 2.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>МОЩНЫЙ 3D БЕНЧМАРК</h1>
+            <p class="subtitle">Тестирование производительности графики с ограничением вертикальной синхронизации</p>
+            <div class="timer-container">
+                <div class="timer">Время: <span id="timer">00:00</span> / 03:00</div>
+            </div>
+        </header>
+        
+        <div class="stats-container">
+            <div class="stat-box">
+                <div class="stat-label">Текущий FPS</div>
+                <div class="stat-value" id="currentFPS">0</div>
+                <div class="stat-label">Кадров в секунду</div>
+            </div>
+            
+            <div class="stat-box">
+                <div class="stat-label">Средний FPS</div>
+                <div class="stat-value" id="avgFPS">0</div>
+                <div class="stat-label">За всё время теста</div>
+            </div>
+            
+            <div class="stat-box">
+                <div class="stat-label">Минимальный FPS</div>
+                <div class="stat-value" id="minFPS">0</div>
+                <div class="stat-label">Наихудшее значение</div>
+            </div>
+            
+            <div class="stat-box">
+                <div class="stat-label">Максимальный FPS</div>
+                <div class="stat-value" id="maxFPS">0</div>
+                <div class="stat-label">Лучшее значение</div>
+            </div>
+        </div>
+        
+        <div class="canvas-container">
+            <canvas id="renderCanvas"></canvas>
+        </div>
+        
+        <div class="controls">
+            <button id="startBtn">Запустить тест</button>
+            <button id="stopBtn">Остановить тест</button>
+        </div>
+        
+        <p class="warning">Тест автоматически остановится через 3 минуты. Максимальный FPS ограничен вертикальной синхронизацией (VSync).</p>
+        
+        <div class="results" id="results">
+            <h2>РЕЗУЛЬТАТЫ ТЕСТА</h2>
+            <div class="results-grid">
+                <div class="result-item">
+                    <div class="stat-label">Средний FPS</div>
+                    <div class="result-value" id="resultAvgFPS">0</div>
+                </div>
+                
+                <div class="result-item">
+                    <div class="stat-label">Минимальный FPS</div>
+                    <div class="result-value" id="resultMinFPS">0</div>
+                </div>
+                
+                <div class="result-item">
+                    <div class="stat-label">Максимальный FPS</div>
+                    <div class="result-value" id="resultMaxFPS">0</div>
+                </div>
+                
+                <div class="result-item">
+                    <div class="stat-label">Стабильность FPS</div>
+                    <div class="result-value" id="resultStability">0%</div>
+                </div>
+                
+                <div class="result-item">
+                    <div class="stat-label">Всего кадров</div>
+                    <div class="result-value" id="resultTotalFrames">0</div>
+                </div>
+                
+                <div class="result-item">
+                    <div class="stat-label">Время теста</div>
+                    <div class="result-value" id="resultTime">0:00</div>
+                </div>
+            </div>
+            
+            <h3 style="margin-top: 30px;">График FPS</h3>
+            <div class="fps-chart" id="fpsChart"></div>
+        </div>
+        
+        <footer>
+            <p>3D Benchmark &copy; 2023 | Используется Babylon.js для рендеринга | VSync ограничение активировано</p>
+        </footer>
+    </div>
+
+    <!-- Babylon.js библиотека -->
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    
+    <script>
+        // Элементы DOM
+        const canvas = document.getElementById('renderCanvas');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const currentFpsElement = document.getElementById('currentFPS');
+        const avgFpsElement = document.getElementById('avgFPS');
+        const minFpsElement = document.getElementById('minFPS');
+        const maxFpsElement = document.getElementById('maxFPS');
+        const timerElement = document.getElementById('timer');
+        const resultsElement = document.getElementById('results');
+        const resultAvgFpsElement = document.getElementById('resultAvgFPS');
+        const resultMinFpsElement = document.getElementById('resultMinFPS');
+        const resultMaxFpsElement = document.getElementById('resultMaxFPS');
+        const resultStabilityElement = document.getElementById('resultStability');
+        const resultTotalFramesElement = document.getElementById('resultTotalFrames');
+        const resultTimeElement = document.getElementById('resultTime');
+        const fpsChartElement = document.getElementById('fpsChart');
+        
+        // Переменные бенчмарка
+        let engine = null;
+        let scene = null;
+        let benchmarkRunning = false;
+        let startTime = 0;
+        let frameCount = 0;
+        let fpsHistory = [];
+        let fpsSum = 0;
+        let minFPS = Infinity;
+        let maxFPS = 0;
+        let timerInterval = null;
+        let chartBars = [];
+        const TEST_DURATION = 3 * 60 * 1000; // 3 минуты в миллисекундах
+        
+        // Инициализация 3D сцены
+        function initScene() {
+            engine = new BABYLON.Engine(canvas, true, {
+                preserveDrawingBuffer: true,
+                stencil: true,
+                limitDeviceRatio: 1 // Ограничение максимального FPS вертикальной синхронизацией
+            });
+            
+            scene = new BABYLON.Scene(engine);
+            scene.clearColor = new BABYLON.Color3(0.1, 0.1, 0.15);
+            
+            // Камера
+            const camera = new BABYLON.ArcRotateCamera("camera", -Math.PI/2, Math.PI/3, 30, BABYLON.Vector3.Zero(), scene);
+            camera.attachControl(canvas, true);
+            camera.lowerRadiusLimit = 10;
+            camera.upperRadiusLimit = 50;
+            
+            // Освещение
+            const light1 = new BABYLON.HemisphericLight("light1", new BABYLON.Vector3(0, 1, 0), scene);
+            light1.intensity = 0.7;
+            
+            const light2 = new BABYLON.PointLight("light2", new BABYLON.Vector3(10, 10, 10), scene);
+            light2.intensity = 0.5;
+            
+            // Создание сложной 3D сцены для бенчмарка
+            createBenchmarkScene();
+            
+            // Запуск рендеринга
+            engine.runRenderLoop(() => {
+                if (scene && benchmarkRunning) {
+                    scene.render();
+                    
+                    // Обновление статистики FPS
+                    updateFPS();
+                }
+            });
+            
+            // Обработка изменения размера окна
+            window.addEventListener('resize', () => {
+                engine.resize();
+            });
+        }
+        
+        // Создание сложной 3D сцены для тестирования
+        function createBenchmarkScene() {
+            // Материалы
+            const materials = [];
+            for (let i = 0; i < 10; i++) {
+                const material = new BABYLON.StandardMaterial(`mat${i}`, scene);
+                material.diffuseColor = new BABYLON.Color3(
+                    Math.random() * 0.8 + 0.2,
+                    Math.random() * 0.8 + 0.2,
+                    Math.random() * 0.8 + 0.2
+                );
+                material.specularColor = new BABYLON.Color3(0.5, 0.5, 0.5);
+                material.emissiveColor = new BABYLON.Color3(
+                    Math.random() * 0.2,
+                    Math.random() * 0.2,
+                    Math.random() * 0.2
+                );
+                materials.push(material);
+            }
+            
+            // Создание множества 3D объектов
+            const objects = [];
+            const gridSize = 8;
+            const spacing = 3;
+            
+            for (let x = -gridSize; x <= gridSize; x++) {
+                for (let z = -gridSize; z <= gridSize; z++) {
+                    // Выбор случайной формы
+                    const shapeType = Math.floor(Math.random() * 5);
+                    let mesh;
+                    
+                    switch(shapeType) {
+                        case 0:
+                            mesh = BABYLON.MeshBuilder.CreateSphere(`sphere_${x}_${z}`, 
+                                {diameter: 1.5 + Math.random() * 0.5, segments: 32}, scene);
+                            break;
+                        case 1:
+                            mesh = BABYLON.MeshBuilder.CreateBox(`box_${x}_${z}`, 
+                                {size: 1.5 + Math.random() * 0.5}, scene);
+                            break;
+                        case 2:
+                            mesh = BABYLON.MeshBuilder.CreateCylinder(`cylinder_${x}_${z}`, 
+                                {height: 2 + Math.random(), diameter: 1 + Math.random() * 0.5}, scene);
+                            break;
+                        case 3:
+                            mesh = BABYLON.MeshBuilder.CreateTorus(`torus_${x}_${z}`, 
+                                {diameter: 1.5 + Math.random(), thickness: 0.3 + Math.random() * 0.2}, scene);
+                            break;
+                        case 4:
+                            mesh = BABYLON.MeshBuilder.CreateIcoSphere(`ico_${x}_${z}`, 
+                                {radius: 1 + Math.random() * 0.5, subdivisions: 2}, scene);
+                            break;
+                    }
+                    
+                    if (mesh) {
+                        mesh.position.x = x * spacing;
+                        mesh.position.z = z * spacing;
+                        mesh.position.y = Math.random() * 2 - 1;
+                        mesh.material = materials[Math.floor(Math.random() * materials.length)];
+                        objects.push(mesh);
+                    }
+                }
+            }
+            
+            // Добавление анимации для объектов
+            scene.onBeforeRenderObservable.add(() => {
+                if (!benchmarkRunning) return;
+                
+                const time = Date.now() * 0.001;
+                
+                objects.forEach((obj, index) => {
+                    // Вращение
+                    obj.rotation.x = Math.sin(time * 0.5 + index * 0.1) * 0.5;
+                    obj.rotation.y = time * 0.3 + index * 0.05;
+                    obj.rotation.z = Math.cos(time * 0.4 + index * 0.07) * 0.3;
+                    
+                    // Плавное перемещение вверх-вниз
+                    obj.position.y = Math.sin(time * 0.8 + index * 0.05) * 1.5;
+                });
+            });
+            
+            // Партиклы для дополнительной нагрузки
+            const particleSystem = new BABYLON.ParticleSystem("particles", 2000, scene);
+            particleSystem.particleTexture = new BABYLON.Texture("https://www.babylonjs-playground.com/textures/flare.png", scene);
+            particleSystem.emitter = new BABYLON.Vector3(0, 0, 0);
+            particleSystem.minEmitBox = new BABYLON.Vector3(-10, -2, -10);
+            particleSystem.maxEmitBox = new BABYLON.Vector3(10, 2, 10);
+            particleSystem.color1 = new BABYLON.Color4(0.7, 0.8, 1.0, 1.0);
+            particleSystem.color2 = new BABYLON.Color4(0.2, 0.5, 1.0, 1.0);
+            particleSystem.colorDead = new BABYLON.Color4(0, 0, 0.2, 0.0);
+            particleSystem.minSize = 0.1;
+            particleSystem.maxSize = 0.5;
+            particleSystem.minLifeTime = 2;
+            particleSystem.maxLifeTime = 4;
+            particleSystem.emitRate = 500;
+            particleSystem.blendMode = BABYLON.ParticleSystem.BLENDMODE_ONEONE;
+            particleSystem.gravity = new BABYLON.Vector3(0, -2, 0);
+            particleSystem.direction1 = new BABYLON.Vector3(-2, 4, -2);
+            particleSystem.direction2 = new BABYLON.Vector3(2, 4, 2);
+            particleSystem.minAngularSpeed = 0;
+            particleSystem.maxAngularSpeed = Math.PI;
+            particleSystem.minEmitPower = 1;
+            particleSystem.maxEmitPower = 3;
+            particleSystem.updateSpeed = 0.01;
+            particleSystem.start();
+        }
+        
+        // Обновление статистики FPS
+        function updateFPS() {
+            const fps = engine.getFps();
+            currentFpsElement.textContent = fps.toFixed(1);
+            
+            frameCount++;
+            fpsHistory.push(fps);
+            fpsSum += fps;
+            
+            // Обновление минимального и максимального FPS
+            if (fps < minFPS) minFPS = fps;
+            if (fps > maxFPS) maxFPS = fps;
+            
+            minFpsElement.textContent = minFPS.toFixed(1);
+            maxFpsElement.textContent = maxFPS.toFixed(1);
+            
+            // Расчет среднего FPS
+            const avgFPS = fpsSum / frameCount;
+            avgFpsElement.textContent = avgFPS.toFixed(1);
+            
+            // Добавление точки на график FPS (каждые 30 кадров)
+            if (frameCount % 30 === 0) {
+                addFpsToChart(fps);
+            }
+            
+            // Автоматическая остановка теста через 3 минуты
+            if (Date.now() - startTime >= TEST_DURATION) {
+                stopBenchmark();
+            }
+        }
+        
+        // Добавление значения FPS на график
+        function addFpsToChart(fps) {
+            const chartWidth = fpsChartElement.clientWidth;
+            const chartHeight = fpsChartElement.clientHeight;
+            const maxFpsForChart = Math.max(maxFPS, 120);
+            const barHeight = (fps / maxFpsForChart) * chartHeight;
+            
+            const bar = document.createElement('div');
+            bar.className = 'fps-bar';
+            bar.style.height = `${barHeight}px`;
+            bar.style.left = `${chartBars.length * 5}px`;
+            
+            // Цвет в зависимости от FPS
+            if (fps >= 60) {
+                bar.style.background = 'linear-gradient(to top, #00dbde, #fc00ff)';
+            } else if (fps >= 30) {
+                bar.style.background = 'linear-gradient(to top, #00dbde, #0093E9)';
+            } else {
+                bar.style.background = 'linear-gradient(to top, #FF416C, #FF4B2B)';
+            }
+            
+            fpsChartElement.appendChild(bar);
+            chartBars.push(bar);
+            
+            // Удаление старых столбцов, если график слишком широкий
+            if (chartBars.length * 5 > chartWidth) {
+                const firstBar = chartBars.shift();
+                if (firstBar && firstBar.parentNode) {
+                    firstBar.parentNode.removeChild(firstBar);
+                }
+                
+                // Перемещение оставшихся столбцов влево
+                chartBars.forEach((bar, index) => {
+                    bar.style.left = `${index * 5}px`;
+                });
+            }
+        }
+        
+        // Запуск бенчмарка
+        function startBenchmark() {
+            if (benchmarkRunning) return;
+            
+            // Сброс статистики
+            benchmarkRunning = true;
+            startTime = Date.now();
+            frameCount = 0;
+            fpsHistory = [];
+            fpsSum = 0;
+            minFPS = Infinity;
+            maxFPS = 0;
+            
+            // Очистка графика
+            chartBars.forEach(bar => {
+                if (bar.parentNode) bar.parentNode.removeChild(bar);
+            });
+            chartBars = [];
+            
+            // Скрытие результатов предыдущего теста
+            resultsElement.style.display = 'none';
+            
+            // Запуск таймера
+            updateTimer();
+            timerInterval = setInterval(updateTimer, 1000);
+            
+            // Активация ограничения вертикальной синхронизации
+            engine.setHardwareScalingLevel(1);
+            
+            // Обновление UI
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+        }
+        
+        // Остановка бенчмарка
+        function stopBenchmark() {
+            if (!benchmarkRunning) return;
+            
+            benchmarkRunning = false;
+            
+            // Остановка таймера
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            
+            // Расчет результатов
+            calculateResults();
+            
+            // Показ результатов
+            resultsElement.style.display = 'block';
+            
+            // Обновление UI
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+        }
+        
+        // Обновление таймера
+        function updateTimer() {
+            const elapsed = Date.now() - startTime;
+            const totalSeconds = Math.floor(elapsed / 1000);
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            
+            timerElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            // Изменение цвета при приближении к концу теста
+            if (elapsed >= TEST_DURATION - 30000) { // Последние 30 секунд
+                timerElement.style.color = '#ff416c';
+            }
+        }
+        
+        // Расчет и отображение результатов
+        function calculateResults() {
+            const elapsed = Date.now() - startTime;
+            const totalSeconds = Math.floor(elapsed / 1000);
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            
+            const avgFPS = fpsSum / frameCount;
+            const stability = (avgFPS / maxFPS) * 100;
+            
+            // Отображение результатов
+            resultAvgFpsElement.textContent = avgFPS.toFixed(1);
+            resultMinFpsElement.textContent = minFPS.toFixed(1);
+            resultMaxFpsElement.textContent = maxFPS.toFixed(1);
+            resultStabilityElement.textContent = stability.toFixed(1) + '%';
+            resultTotalFramesElement.textContent = frameCount.toLocaleString();
+            resultTimeElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+        
+        // Инициализация при загрузке страницы
+        window.addEventListener('DOMContentLoaded', () => {
+            initScene();
+            
+            // Назначение обработчиков событий
+            startBtn.addEventListener('click', startBenchmark);
+            stopBtn.addEventListener('click', stopBenchmark);
+            stopBtn.disabled = true;
+            
+            // Информация о вертикальной синхронизации
+            console.log("Бенчмарк запущен с ограничением вертикальной синхронизации (VSync).");
+            console.log("Максимальный FPS будет ограничен частотой обновления вашего монитора.");
+        });
+    </script>
+</body>
+</html>
